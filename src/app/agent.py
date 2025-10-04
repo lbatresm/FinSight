@@ -1,19 +1,27 @@
-import os, getpass
+import os
 from dotenv import load_dotenv
 
-
+# Langchain basics
 from langchain_openai import ChatOpenAI
-from langgraph.graph import MessagesState
 from langchain_core.messages import HumanMessage, SystemMessage
 
+# Langgraph basics
 from langgraph.graph import START, StateGraph
 from langgraph.prebuilt import tools_condition
 from langgraph.prebuilt import ToolNode
 
+# Memory
+from langgraph.checkpoint.memory import InMemorySaver
 
+# Messages as state and reducers
+from typing_extensions import TypedDict
+from langchain_core.messages import AnyMessage
+from typing import Annotated
+from langgraph.graph.message import add_messages
+
+
+# Modules
 import tools.math as math
-
-
 
 # Load environment variables
 load_dotenv()
@@ -28,21 +36,28 @@ LANGSMITH_ENDPOINT = os.environ['LANGSMITH_ENDPOINT']
 LANGSMITH_PROJECT = os.environ['LANGSMITH_PROJECT']
 
 
-
 # Configurations
-tools = [math.add, math.substract, math.multiply, math.divide]
-llm = ChatOpenAI(model="gpt-4o")
+tools = [math.add, math.subtract, math.multiply, math.divide]
+llm = ChatOpenAI(model="gpt-4o", temperature=0)
 llm_with_tools = llm.bind_tools(tools, parallel_tool_calls=False)
+
+# Short term memory
+checkpointer = InMemorySaver()
+config = {"configurable": {"thread_id": "1"}}
 
 # System message
 sys_msg = SystemMessage(content="You are a helpful assistant tasked with performing arithmetic on a set of inputs.")
 
+# Use messages as state with add reduce
+class State(TypedDict):
+    messages: Annotated[list[AnyMessage], add_messages]
+
 # Node
-def assistant(state: MessagesState):
-   return {"messages": [llm_with_tools.invoke([sys_msg] + state["messages"])]}
+def assistant(state: State):
+   return {"messages": [llm_with_tools.invoke(state["messages"])]}
 
 # Graph
-builder = StateGraph(MessagesState)
+builder = StateGraph(State)
 
 # Define nodes: these do the work
 builder.add_node("assistant", assistant)
@@ -57,10 +72,16 @@ builder.add_conditional_edges(
     tools_condition,
 )
 builder.add_edge("tools", "assistant")
-react_graph = builder.compile()
+react_graph = builder.compile(checkpointer=checkpointer)
 
-messages = [HumanMessage(content="Add 3 and 4. Multiply the output by 2. Divide the output by 5")]
-messages = react_graph.invoke({"messages": messages})
+# --- Run ---
+messages = [
+    sys_msg,  # Use SystemMessage!
+    HumanMessage(content="Add 3 and 4. Multiply the output by 2. Divide the output by 5."),
+]
 
-for m in messages['messages']:
-    m.pretty_print()
+results = react_graph.invoke({"messages": messages}, config)
+
+for r in results['messages']:
+    r.pretty_print()
+

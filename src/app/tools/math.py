@@ -11,8 +11,8 @@ def add(a: int, b: int) -> int:
     return a + b
 
 @tool
-def substract(a: int, b: int) -> int:
-    """Substracts a and b.
+def subtract(a: int, b: int) -> int:
+    """Subtracts a and b.
 
     Args:
         a: first int
