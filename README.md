@@ -1,6 +1,6 @@
 # 💷 FinSights: A Financial Insight AI System
 
-[![Python](https://img.shields.io/badge/python-≥3.10-blue.svg)](https://www.python.org/)
+[![Python](https://img.shields.io/badge/python-≥3.11-blue.svg)](https://www.python.org/)
 [![LangChain](https://img.shields.io/badge/LangChain-🚀-green.svg)](https://www.langchain.com/)
 [![Status](https://img.shields.io/badge/status-experimental-orange.svg)]()
 
@@ -16,6 +16,6 @@ The goal is to explore how AI can **analyze, summarize, and generate meaningful 
 ---
 
 ## 📦 Requirements
-- Python ≥ **3.10**  
+- Python ≥ **3.11**  
 - [Poetry](https://python-poetry.org/)  for dependency management.  
 - Dependencies should be error-free in the .toml file. If you encounter problems with the langchain dependencies, check [langchain version compatibility table.](https://python.langchain.com/docs/versions/v0_3/)

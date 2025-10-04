@@ -24,3 +24,30 @@ For the moment we'll use `TypedDict State Schema`. We could change to `Pydantic`
 * For simple bots 500-2000 tokens should be enough
 * For more complex converrsations 4000-8000 tokens.
 * gpt-40 has a limit of 128 tokens of conext
+
+### Streaming (TODO)
+
+LangGraph supports various streaming methods (stream() or astream()) and various modes (values, updates, custom, messages, debug)
+
+Use:
+
+# ---- Run ----
+messages = [
+    sys_msg,  # Use SystemMessage!
+    HumanMessage(content="Add 3 and 4. Multiply the output by 2. Divide the output by 5."),
+]
+
+
+async def main():
+    node_to_stream = "assistant"
+
+    async for event in react_graph.astream_events(
+        {"messages": messages}, 
+        config, 
+        version="v2"
+    ):
+        if event["event"] == "on_chat_model_stream" and event["metadata"].get("langgraph_node", "") == node_to_stream:
+            print(event["data"], end="", flush=True)
+
+if __name__ == "__main__":
+    asyncio.run(main())

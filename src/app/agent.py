@@ -1,4 +1,5 @@
 import os
+import asyncio
 from dotenv import load_dotenv
 
 # Langchain basics
@@ -64,7 +65,7 @@ def assistant(state: State):
     )
     return {"messages": [llm_with_tools.invoke(messages)]}
 
-# Graph
+# ---- Graph ----
 builder = StateGraph(State)
 
 # Define nodes: these do the work
@@ -82,14 +83,35 @@ builder.add_conditional_edges(
 builder.add_edge("tools", "assistant")
 react_graph = builder.compile(checkpointer=checkpointer)
 
-# --- Run ---
+# ---- Run ----
+mode = "debug" # Choose streaming or debug
+
 messages = [
-    sys_msg,  # Use SystemMessage!
-    HumanMessage(content="Add 3 and 4. Multiply the output by 2. Divide the output by 5."),
-]
+        sys_msg,  # Use SystemMessage!
+        HumanMessage(content="Add 3 and 4. Multiply the output by 2. Divide the output by 5."),
+    ]
 
-results = react_graph.invoke({"messages": messages}, config)
+if mode == "debug":
+    def main():
+        results = react_graph.invoke({"messages": messages}, config)
+        for r in results['messages']:
+            r.pretty_print()
+elif mode == "streaming":
+    async def main():
+        node_to_stream = "assistant"
 
-for r in results['messages']:
-    r.pretty_print()
+        async for event in react_graph.astream_events(
+            {"messages": messages}, 
+            config, 
+            version="v2"
+        ):
+            if event["event"] == "on_chat_model_stream" and event["metadata"].get("langgraph_node", "") == node_to_stream:
+                data = event["data"]
+                print(data["chunk"].content, end="")
 
+
+if __name__ == "__main__":
+    if mode == "debug":
+        main()
+    elif mode == "streaming":
+        asyncio.run(main()) #coroutine
