@@ -1,8 +1,10 @@
-# Some functions in this script are comming from https://github.com/langchain-ai/deep-agents-from-scratch/blob/main/notebooks/utils.py
+# Some functions in this script are comming from https://github.com/langchain-ai/deep-agents-from-scratch/
 import json
 
 from rich.console import Console
 from rich.panel import Panel
+from rich.text import Text
+
 
 console = Console()
 
@@ -60,20 +62,31 @@ def format_message(messages):
     """Alias for format_messages for backward compatibility."""
     return format_messages(messages)
 
-# Define custom reducer
-def reduce_list(left: list | None, right: list | None) -> list:
-    """Safely combine two lists, handling cases where either or both inputs might be None.
+
+def show_prompt(prompt_text: str, title: str = "Prompt", border_style: str = "blue"):
+    """Display a prompt with rich formatting and XML tag highlighting.
 
     Args:
-        left (list | None): The first list to combine, or None.
-        right (list | None): The second list to combine, or None.
-
-    Returns:
-        list: A new list containing all elements from both input lists.
-               If an input is None, it's treated as an empty list.
+        prompt_text: The prompt string to display
+        title: Title for the panel (default: "Prompt")
+        border_style: Border color style (default: "blue")
     """
-    if not left:
-        left = []
-    if not right:
-        right = []
-    return left + right
+    # Create a formatted display of the prompt
+    formatted_text = Text(prompt_text)
+    formatted_text.highlight_regex(r"<[^>]+>", style="bold blue")  # Highlight XML tags
+    formatted_text.highlight_regex(
+        r"##[^#\n]+", style="bold magenta"
+    )  # Highlight headers
+    formatted_text.highlight_regex(
+        r"###[^#\n]+", style="bold cyan"
+    )  # Highlight sub-headers
+
+    # Display in a panel for better presentation
+    console.print(
+        Panel(
+            formatted_text,
+            title=f"[bold green]{title}[/bold green]",
+            border_style=border_style,
+            padding=(1, 2),
+        )
+    )

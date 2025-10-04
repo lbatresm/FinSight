@@ -18,14 +18,15 @@ We can use the `Annotated` type to specify a reducer function. Reducer functions
 
 For the moment we'll use `TypedDict State Schema`. We could change to `Pydantic` if we want to enforce types at runtime. [Info here.](https://langchain-ai.github.io/langgraph/concepts/low_level/#state)
 
+<!-- 
 ### Max tokens for a conversation
 `trim_message`function is used to limit the maximum amount of tokens for the conversation history. 
 
 * For simple bots 500-2000 tokens should be enough
 * For more complex converrsations 4000-8000 tokens.
-* gpt-40 has a limit of 128 tokens of conext
+* gpt-40 has a limit of 128 tokens of conext -->
 
-### Streaming (TODO)
+<!-- ### Streaming (TODO)
 
 LangGraph supports various streaming methods (stream() or astream()) and various modes (values, updates, custom, messages, debug)
 
@@ -48,4 +49,10 @@ Use:
                 print(event["data"], end="", flush=True)
 
     if __name__ == "__main__":
-        asyncio.run(main())
+        asyncio.run(main()) -->
+
+### To-do lists
+
+Many agents use TODO lists as a critical navigation tool for steering through long-running, complex tasks. Claude Code leverages plan mode to create structured TODO lists before executing tasks, utilizing a specific tool called TodoWrite based on the Claude Code prompt. Each TODO item contains two key components: content (a short, specific task description) and status (pending, in_progress, or completed).
+
+The challenge with TODO lists lies in maintaining attention as context windows grow—the average Manus task uses approximately 50 tool calls, creating substantial risk of context rot. Agents become vulnerable to drifting off-topic or forgetting earlier objectives during lengthy conversations or complicated tasks. By continuously rewriting and updating the TODO list, agents like Manus effectively recite their objectives at the end of the context, helping to stay focused on task and prevent mission drift.
