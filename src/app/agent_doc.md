@@ -31,23 +31,21 @@ LangGraph supports various streaming methods (stream() or astream()) and various
 
 Use:
 
-# ---- Run ----
-messages = [
-    sys_msg,  # Use SystemMessage!
-    HumanMessage(content="Add 3 and 4. Multiply the output by 2. Divide the output by 5."),
-]
+    messages = [
+        sys_msg,  # Use SystemMessage!
+        HumanMessage(content="Add 3 and 4. Multiply the output by 2. Divide the output by 5."),
+    ]
 
+    async def main():
+        node_to_stream = "assistant"
 
-async def main():
-    node_to_stream = "assistant"
+        async for event in react_graph.astream_events(
+            {"messages": messages}, 
+            config, 
+            version="v2"
+        ):
+            if event["event"] == "on_chat_model_stream" and event["metadata"].get("langgraph_node", "") == node_to_stream:
+                print(event["data"], end="", flush=True)
 
-    async for event in react_graph.astream_events(
-        {"messages": messages}, 
-        config, 
-        version="v2"
-    ):
-        if event["event"] == "on_chat_model_stream" and event["metadata"].get("langgraph_node", "") == node_to_stream:
-            print(event["data"], end="", flush=True)
-
-if __name__ == "__main__":
-    asyncio.run(main())
+    if __name__ == "__main__":
+        asyncio.run(main())

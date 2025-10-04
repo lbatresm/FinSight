@@ -4,27 +4,22 @@ from dotenv import load_dotenv
 
 # Langchain basics
 from langchain_openai import ChatOpenAI
-from langchain_core.messages import HumanMessage, SystemMessage, trim_messages
+from langchain_core.messages import SystemMessage, trim_messages
 
 # Langgraph basics
-from langgraph.graph import START, StateGraph
-from langgraph.prebuilt import tools_condition
-from langgraph.prebuilt import ToolNode
+from langgraph.prebuilt import create_react_agent
+from langgraph.prebuilt.chat_agent_executor import AgentState
+
 
 # Memory
 from langgraph.checkpoint.memory import InMemorySaver
 
 # Messages as state and reducers
-from typing_extensions import TypedDict
-from langchain_core.messages import AnyMessage
-from typing import Annotated
-from langgraph.graph.message import add_messages
-
-# Trim and filter messages
-from langchain_core.messages import trim_messages
+from typing import Annotated, List
 
 # Modules
 import tools.math as math
+from utils import format_messages, reduce_list
 
 # Load environment variables
 load_dotenv()
@@ -39,10 +34,12 @@ LANGSMITH_ENDPOINT = os.environ['LANGSMITH_ENDPOINT']
 LANGSMITH_PROJECT = os.environ['LANGSMITH_PROJECT']
 
 
+
+
 # Configurations
-tools = [math.add, math.subtract, math.multiply, math.divide]
-llm = ChatOpenAI(model="gpt-4o", temperature=0)
-llm_with_tools = llm.bind_tools(tools, parallel_tool_calls=False)
+llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.0)
+tools = [math.calculator_wstate]
+
 
 # Short term memory
 checkpointer = InMemorySaver()
@@ -51,67 +48,31 @@ config = {"configurable": {"thread_id": "1"}}
 # System message
 sys_msg = SystemMessage(content="You are a helpful assistant tasked with performing arithmetic on a set of inputs.")
 
-# Use messages as state with add reduce
-class State(TypedDict):
-    messages: Annotated[list[AnyMessage], add_messages]
 
-# Node
-def assistant(state: State):
-    messages = trim_messages(state["messages"],
-        max_tokens=500, 
-        strategy="last", 
-        token_counter=ChatOpenAI(model="gpt-4o"), 
-        allow_partial=False,
-    )
-    return {"messages": [llm_with_tools.invoke(messages)]}
 
-# ---- Graph ----
-builder = StateGraph(State)
+# Initialize built-in react agent abstraction
+agent = create_react_agent(
+    llm,
+    tools,
+    prompt = sys_msg,
+    state_schema=math.CalcState
+).with_config({"recursion_limit":20}) # Limits number of steps agent will run
 
-# Define nodes: these do the work
-builder.add_node("assistant", assistant)
-builder.add_node("tools", ToolNode(tools))
-
-# Define edges: these determine how the control flow moves
-builder.add_edge(START, "assistant")
-builder.add_conditional_edges(
-    "assistant",
-    # If the latest message (result) from assistant is a tool call -> tools_condition routes to tools
-    # If the latest message (result) from assistant is a not a tool call -> tools_condition routes to END
-    tools_condition,
-)
-builder.add_edge("tools", "assistant")
-react_graph = builder.compile(checkpointer=checkpointer)
+# Print graph mermaid diagram in png
+output_path = os.path.join("src", "app", "graph_mermaid_image.png")
+with open(output_path, "wb") as f:
+        f.write(agent.get_graph(xray=True).draw_mermaid_png())
 
 # ---- Run ----
-mode = "debug" # Choose streaming or debug
+result = agent.invoke(
+    {
+        "messages":[
+            {
+                "role":"user",
+                "content":"What is 3.1 * 4.2?"
+            }
+        ]
+    }
+)
 
-messages = [
-        sys_msg,  # Use SystemMessage!
-        HumanMessage(content="Add 3 and 4. Multiply the output by 2. Divide the output by 5."),
-    ]
-
-if mode == "debug":
-    def main():
-        results = react_graph.invoke({"messages": messages}, config)
-        for r in results['messages']:
-            r.pretty_print()
-elif mode == "streaming":
-    async def main():
-        node_to_stream = "assistant"
-
-        async for event in react_graph.astream_events(
-            {"messages": messages}, 
-            config, 
-            version="v2"
-        ):
-            if event["event"] == "on_chat_model_stream" and event["metadata"].get("langgraph_node", "") == node_to_stream:
-                data = event["data"]
-                print(data["chunk"].content, end="")
-
-
-if __name__ == "__main__":
-    if mode == "debug":
-        main()
-    elif mode == "streaming":
-        asyncio.run(main()) #coroutine
+format_messages(result["messages"])
