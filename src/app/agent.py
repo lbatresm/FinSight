@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 
 # Langchain basics
 from langchain_openai import ChatOpenAI
-from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.messages import HumanMessage, SystemMessage, trim_messages
 
 # Langgraph basics
 from langgraph.graph import START, StateGraph
@@ -19,6 +19,8 @@ from langchain_core.messages import AnyMessage
 from typing import Annotated
 from langgraph.graph.message import add_messages
 
+# Trim and filter messages
+from langchain_core.messages import trim_messages
 
 # Modules
 import tools.math as math
@@ -54,7 +56,13 @@ class State(TypedDict):
 
 # Node
 def assistant(state: State):
-   return {"messages": [llm_with_tools.invoke(state["messages"])]}
+    messages = trim_messages(state["messages"],
+        max_tokens=500, 
+        strategy="last", 
+        token_counter=ChatOpenAI(model="gpt-4o"), 
+        allow_partial=False,
+    )
+    return {"messages": [llm_with_tools.invoke(messages)]}
 
 # Graph
 builder = StateGraph(State)

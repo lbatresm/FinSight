@@ -18,3 +18,4 @@ The goal is to explore how AI can **analyze, summarize, and generate meaningful 
 ## 📦 Requirements
 - Python ≥ **3.10**  
 - [Poetry](https://python-poetry.org/)  for dependency management.  
+- Dependencies should be error-free in the .toml file. If you encounter problems with the langchain dependencies, check [langchain version compatibility table.](https://python.langchain.com/docs/versions/v0_3/)
