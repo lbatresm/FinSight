@@ -36,7 +36,8 @@ class Summary(BaseModel):
 
 def get_today_str():
     """Get current date in a human-readable format."""
-    return datetime.now().strftime("%a %b %-d, %Y")
+    fmt = "%a %b %-d, %Y" if platform.system() != "Windows" else "%a %b %#d, %Y"
+    return datetime.now().strftime(fmt)
 
 def run_tavily_search(
     search_query: str, 
