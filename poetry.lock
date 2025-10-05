@@ -216,6 +216,29 @@ tests = ["cloudpickle ; platform_python_implementation == \"CPython\"", "hypothe
 tests-mypy = ["mypy (>=1.11.1) ; platform_python_implementation == \"CPython\" and python_version >= \"3.10\"", "pytest-mypy-plugins ; platform_python_implementation == \"CPython\" and python_version >= \"3.10\""]
 
 [[package]]
+name = "beautifulsoup4"
+version = "4.14.2"
+description = "Screen-scraping library"
+optional = false
+python-versions = ">=3.7.0"
+groups = ["main"]
+files = [
+    {file = "beautifulsoup4-4.14.2-py3-none-any.whl", hash = "sha256:5ef6fa3a8cbece8488d66985560f97ed091e22bbc4e9c2338508a9d5de6d4515"},
+    {file = "beautifulsoup4-4.14.2.tar.gz", hash = "sha256:2a98ab9f944a11acee9cc848508ec28d9228abfd522ef0fad6a02a72e0ded69e"},
+]
+
+[package.dependencies]
+soupsieve = ">1.2"
+typing-extensions = ">=4.0.0"
+
+[package.extras]
+cchardet = ["cchardet"]
+chardet = ["chardet"]
+charset-normalizer = ["charset-normalizer"]
+html5lib = ["html5lib"]
+lxml = ["lxml"]
+
+[[package]]
 name = "certifi"
 version = "2025.8.3"
 description = "Python package for providing Mozilla's CA Bundle."
@@ -1241,6 +1264,22 @@ plugins = ["mdit-py-plugins (>=0.5.0)"]
 profiling = ["gprof2dot"]
 rtd = ["ipykernel", "jupyter_sphinx", "mdit-py-plugins (>=0.5.0)", "myst-parser", "pyyaml", "sphinx", "sphinx-book-theme (>=1.0,<2.0)", "sphinx-copybutton", "sphinx-design"]
 testing = ["coverage", "pytest", "pytest-cov", "pytest-regressions", "requests"]
+
+[[package]]
+name = "markdownify"
+version = "1.2.0"
+description = "Convert HTML to markdown."
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "markdownify-1.2.0-py3-none-any.whl", hash = "sha256:48e150a1c4993d4d50f282f725c0111bd9eb25645d41fa2f543708fd44161351"},
+    {file = "markdownify-1.2.0.tar.gz", hash = "sha256:f6c367c54eb24ee953921804dfe6d6575c5e5b42c643955e7242034435de634c"},
+]
+
+[package.dependencies]
+beautifulsoup4 = ">=4.9,<5"
+six = ">=1.15,<2"
 
 [[package]]
 name = "marshmallow"
@@ -2385,6 +2424,18 @@ files = [
 ]
 
 [[package]]
+name = "soupsieve"
+version = "2.8"
+description = "A modern CSS selector implementation for Beautiful Soup."
+optional = false
+python-versions = ">=3.9"
+groups = ["main"]
+files = [
+    {file = "soupsieve-2.8-py3-none-any.whl", hash = "sha256:0cc76456a30e20f5d7f2e14a98a4ae2ee4e5abdc7c5ea0aafe795f344bc7984c"},
+    {file = "soupsieve-2.8.tar.gz", hash = "sha256:e2dd4a40a628cb5f28f6d4b0db8800b8f581b65bb380b97de22ba5ca8d72572f"},
+]
+
+[[package]]
 name = "sqlalchemy"
 version = "2.0.43"
 description = "Database Abstraction Library"
@@ -2494,6 +2545,23 @@ files = [
 
 [package.extras]
 widechars = ["wcwidth"]
+
+[[package]]
+name = "tavily-python"
+version = "0.7.12"
+description = "Python wrapper for the Tavily API"
+optional = false
+python-versions = ">=3.6"
+groups = ["main"]
+files = [
+    {file = "tavily_python-0.7.12-py3-none-any.whl", hash = "sha256:00d09b9de3ca02ef9a994cf4e7ae43d4ec9d199f0566ba6e52cbfcbd07349bd1"},
+    {file = "tavily_python-0.7.12.tar.gz", hash = "sha256:661945bbc9284cdfbe70fb50de3951fd656bfd72e38e352481d333a36ae91f5a"},
+]
+
+[package.dependencies]
+httpx = "*"
+requests = "*"
+tiktoken = ">=0.5.1"
 
 [[package]]
 name = "tenacity"
@@ -2947,4 +3015,4 @@ cffi = ["cffi (>=1.17,<2.0) ; platform_python_implementation != \"PyPy\" and pyt
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11,<4.0"
-content-hash = "15618faf46e6cc45a9897f516d579534f7655f0c6a8c55261f7a3cbf398243ff"
+content-hash = "b1043cf682d8785bccdffb779ae711219c17cc4856bcb16ce2889316e94d9cfe"

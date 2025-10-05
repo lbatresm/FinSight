@@ -12,6 +12,8 @@ The goal is to explore how AI can **analyze, summarize, and generate meaningful 
 ## ✨ Features
 - ⚡️ Powered by **LangChain**, the leading framework for LLM applications.  
 - 🔎 Financial data processing and analysis.  
+- 🕵️‍♂️ Based on **Deep Agents** with planning capability, access to a file system for context offloading, task delegation
+using sub-agents and carefully-crafted prompts.
 
 ---
 

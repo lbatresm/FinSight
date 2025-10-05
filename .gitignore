@@ -1,3 +1,7 @@
+# Folders
 .env
 .venv/
 __pycache__
+
+# Personal markdown files
+src/app/*.md
