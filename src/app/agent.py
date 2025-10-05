@@ -1,6 +1,7 @@
 import os
 import asyncio
 from dotenv import load_dotenv
+from datetime import datetime
 
 # Langchain basics
 from langchain_openai import ChatOpenAI
@@ -21,9 +22,10 @@ from typing import Annotated, List
 from state import DeepAgentState
 import tools.math as math
 from utils import format_messages, show_prompt
-from prompts import WRITE_TODOS_DESCRIPTION, TODO_USAGE_INSTRUCTIONS, FILE_USAGE_INSTRUCTIONS
+from prompts import WRITE_TODOS_DESCRIPTION, TODO_USAGE_INSTRUCTIONS, FILE_USAGE_INSTRUCTIONS, SUBAGENT_USAGE_INSTRUCTIONS
 from tools.todo_tools import write_todos, read_todos
 from tools.file_tools import ls, read_file, write_file
+from tools.task_tool import _create_task_tool
 
 
 # Load environment variables
@@ -40,7 +42,6 @@ LANGSMITH_PROJECT = os.environ['LANGSMITH_PROJECT']
 
 
 # ----Mock data----
-
 # Mock search result
 search_result = """The Model Context Protocol (MCP) is an open standard protocol developed 
 by Anthropic to enable seamless integration between AI models and external systems like 
@@ -73,12 +74,16 @@ def web_search(
     return search_result
 
 # Add mock research instructions
-SIMPLE_RESEARCH_INSTRUCTIONS = """If you need to do a web search, call the web_search tool once and use the result provided to answer the user"""
+SIMPLE_RESEARCH_INSTRUCTIONS = """You are a researcher. Research the topic provided to you. If you need to do a web search, call the web_search tool once and use the result provided to answer the user"""
 
 # ----Code----
 # Configurations
-llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.0)
-tools = [web_search, write_todos, read_todos, ls, read_file, write_file]
+model = ChatOpenAI(model="gpt-4o-mini", temperature=0.0)
+# tools = [web_search, write_todos, read_todos, ls, read_file, write_file]
+sub_agent_tools = [web_search]
+# Limits
+max_concurrent_research_units = 3
+max_researcher_iterations = 3
 
 # # Short term memory
 # checkpointer = InMemorySaver()
@@ -92,15 +97,37 @@ INSTRUCTIONS = (
     + "\n\n"
     + SIMPLE_RESEARCH_INSTRUCTIONS
 )
-show_prompt(INSTRUCTIONS)
+show_prompt(SUBAGENT_USAGE_INSTRUCTIONS)
+
+
+# Create research subagent
+research_sub_agent = {
+    "name": "research-agent",
+    "description": "Delegate research to the sub-agent researcher. Only give this researcher one topic at a time.",
+    "prompt": SIMPLE_RESEARCH_INSTRUCTIONS,
+    "tools": ["web_search"],
+}
+
+# Create task tool to delegate tasks to sub-agents
+task_tool = _create_task_tool(
+    sub_agent_tools, [research_sub_agent], model, DeepAgentState
+)
+
+# Delegation tools
+delegation_tools = [task_tool]
 
 # Initialize built-in react agent abstraction
 agent = create_react_agent(
-    llm,
-    tools,
-    prompt = INSTRUCTIONS,
-    state_schema=DeepAgentState
+    model,
+    delegation_tools,
+    prompt=SUBAGENT_USAGE_INSTRUCTIONS.format(
+        max_concurrent_research_units=max_concurrent_research_units,
+        max_researcher_iterations=max_researcher_iterations,
+        date=datetime.now().strftime("%a %b %d, %Y").replace(" 0", " "),
+    ),
+    state_schema=DeepAgentState,
 ).with_config({"recursion_limit":20}) # Limits number of steps agent will run
+
 
 # # Print graph mermaid diagram in png
 # output_path = os.path.join("src", "app", "graph_mermaid_image.png")
@@ -121,3 +148,6 @@ result = agent.invoke(
     }
 )
 format_messages(result["messages"])
+
+# Print created files from file system
+print(result["files"])
