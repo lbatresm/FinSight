@@ -21,10 +21,10 @@ from typing import Annotated, List
 from state import DeepAgentState
 import tools.math as math
 from utils import format_messages, show_prompt
-from prompts import WRITE_TODOS_DESCRIPTION, TODO_USAGE_INSTRUCTIONS
-from todo_tools import write_todos, read_todos
+from prompts import WRITE_TODOS_DESCRIPTION, TODO_USAGE_INSTRUCTIONS, FILE_USAGE_INSTRUCTIONS
+from tools.todo_tools import write_todos, read_todos
+from tools.file_tools import ls, read_file, write_file
 
-show_prompt(WRITE_TODOS_DESCRIPTION)
 
 # Load environment variables
 load_dotenv()
@@ -73,30 +73,32 @@ def web_search(
     return search_result
 
 # Add mock research instructions
-SIMPLE_RESEARCH_INSTRUCTIONS = """IMPORTANT: Just make a single call to the web_search tool and use the result provided by the tool to answer the user's question."""
+SIMPLE_RESEARCH_INSTRUCTIONS = """If you need to do a web search, call the web_search tool once and use the result provided to answer the user"""
 
 # ----Code----
-
 # Configurations
 llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.0)
-tools = [write_todos, web_search, read_todos]
+tools = [web_search, write_todos, read_todos, ls, read_file, write_file]
 
 # # Short term memory
 # checkpointer = InMemorySaver()
 # config = {"configurable": {"thread_id": "1"}}
 
-# # System message
-# sys_msg = SystemMessage(content="You are a helpful assistant tasked with performing arithmetic on a set of inputs.")
+# Agent instructions. REMEMBER NOT TO PUT A COMMA AT THE END OF INSTRUCTIONS, SINCE IT CONVERTS STRING INTO SINGLE ELEMENT TUPLE!
+INSTRUCTIONS = (
+    FILE_USAGE_INSTRUCTIONS
+    + "\n\n"
+    + "=" * 80
+    + "\n\n"
+    + SIMPLE_RESEARCH_INSTRUCTIONS
+)
+show_prompt(INSTRUCTIONS)
 
 # Initialize built-in react agent abstraction
 agent = create_react_agent(
     llm,
     tools,
-    prompt = TODO_USAGE_INSTRUCTIONS
-    + "\n\n"
-    + "=" * 80
-    + "\n\n"
-    + SIMPLE_RESEARCH_INSTRUCTIONS,
+    prompt = INSTRUCTIONS,
     state_schema=DeepAgentState
 ).with_config({"recursion_limit":20}) # Limits number of steps agent will run
 
@@ -108,14 +110,14 @@ agent = create_react_agent(
 # ---- Run ----
 result = agent.invoke(
     {
-        "messages":[
+        "messages": [
             {
-                "role":"user",
-                "content":"Give me a short summary of the Model Context Protocol (MCP)."
+                "role": "user",
+                "content": "Give me an overview of Model Context Protocol (MCP).",
             }
         ],
         "todos": [],
+        "files": {},
     }
 )
-
 format_messages(result["messages"])

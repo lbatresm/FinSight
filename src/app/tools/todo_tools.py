@@ -1,5 +1,7 @@
-"""To-do management tools for task planning and progress tracking."""
-# Some functions in this script are comming from https://github.com/langchain-ai/deep-agents-from-scratch/
+"""
+To-do management tools for task planning and progress tracking.
+Some functions in this script are comming from https://github.com/langchain-ai/deep-agents-from-scratch/
+"""
 
 
 from typing import Annotated

@@ -22,7 +22,7 @@ def format_message_content(message):
             if item.get("type") == "text":
                 parts.append(item["text"])
             elif item.get("type") == "tool_use":
-                parts.append(f"\n🔧 Tool Call: {item['name']}")
+                parts.append(f"\nTool Call: {item['name']}")
                 parts.append(f"   Args: {json.dumps(item['input'], indent=2, ensure_ascii=False)}")
                 parts.append(f"   ID: {item.get('id', 'N/A')}")
                 tool_calls_processed = True
@@ -36,7 +36,7 @@ def format_message_content(message):
         and message.tool_calls
     ):
         for tool_call in message.tool_calls:
-            parts.append(f"\n🔧 Tool Call: {tool_call['name']}")
+            parts.append(f"\nTool Call: {tool_call['name']}")
             parts.append(f"   Args: {json.dumps(tool_call['args'], indent=2, ensure_ascii=False)}")
             parts.append(f"   ID: {tool_call['id']}")
 
@@ -49,13 +49,13 @@ def format_messages(messages):
         content = format_message_content(m)
 
         if msg_type == "Human":
-            console.print(Panel(content, title="🧑 Human", border_style="blue"))
+            console.print(Panel(content, title="Human", border_style="blue"))
         elif msg_type == "Ai":
-            console.print(Panel(content, title="🤖 Assistant", border_style="green"))
+            console.print(Panel(content, title="Assistant", border_style="green"))
         elif msg_type == "Tool":
-            console.print(Panel(content, title="🔧 Tool Output", border_style="yellow"))
+            console.print(Panel(content, title="Tool Output", border_style="yellow"))
         else:
-            console.print(Panel(content, title=f"📝 {msg_type}", border_style="white"))
+            console.print(Panel(content, title=f"{msg_type}", border_style="white"))
 
 
 def format_message(messages):
