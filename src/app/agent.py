@@ -26,7 +26,7 @@ from prompts import RESEARCHER_INSTRUCTIONS, WRITE_TODOS_DESCRIPTION, TODO_USAGE
 from tools.todo_tools import write_todos, read_todos
 from tools.file_tools import ls, read_file, write_file
 from tools.task_tool import _create_task_tool
-from tools.research_tools import tavily_search, think_tool, get_today_str
+from tools.research_tools import tavily_search, get_today_str
 
 
 # Load environment variables
@@ -86,15 +86,15 @@ max_concurrent_research_units = 3
 max_researcher_iterations = 3
 
 # Tools
-built_in_tools = [ls, read_file, write_file, write_todos, read_todos, think_tool]
-sub_agent_tools = [tavily_search, think_tool]
+built_in_tools = [ls, read_file, write_file, write_todos, read_todos]
+sub_agent_tools = [tavily_search]
 
 # Create research subagent
 research_sub_agent = {
     "name": "research-agent",
     "description": "Delegate research to the sub-agent researcher. Only give this researcher one topic at a time.",
     "prompt": RESEARCHER_INSTRUCTIONS.format(date=get_today_str),
-    "tools": ["tavily_search", "think_tool"],
+    "tools": ["tavily_search"],
 }
 
 # Create task tool to delegate tasks to sub-agents
@@ -112,7 +112,7 @@ SUBAGENT_INSTRUCTIONS = SUBAGENT_USAGE_INSTRUCTIONS.format(
     max_researcher_iterations=max_researcher_iterations,
     date=get_today_str,
 )
-show_prompt(SUBAGENT_INSTRUCTIONS)
+# show_prompt(SUBAGENT_INSTRUCTIONS)
 
 # Build prompt for main agent
 INSTRUCTIONS = (
@@ -129,7 +129,7 @@ INSTRUCTIONS = (
     + "# SUB-AGENT DELEGATION\n"
     + SUBAGENT_INSTRUCTIONS
 )
-show_prompt(INSTRUCTIONS)
+# show_prompt(INSTRUCTIONS)
 
 # Initialize built-in react agent abstraction
 agent = create_react_agent(
@@ -137,7 +137,7 @@ agent = create_react_agent(
     all_tools,
     prompt=INSTRUCTIONS,
     state_schema=DeepAgentState,
-)
+).with_config({"recursion_limit": 20})
 
 # Print graph mermaid diagram in png
 # output_path = os.path.join("src", "app", "graph_mermaid_image.png")
@@ -151,11 +151,10 @@ result = agent.invoke(
             {
                 "role": "user",
                 "content": "Give me an overview of Model Context Protocol (MCP).",
+                "files": {},
+                "todos": [],
             }
         ],
     }
 )
 format_messages(result["messages"])
-
-# Print created files from file system
-print(result["files"])

@@ -33,7 +33,7 @@ WRITE_TODOS_DESCRIPTION = """Create and manage structured task lists for trackin
 Updates agent state with new todo list."""
 
 TODO_USAGE_INSTRUCTIONS = """Based upon the user's request:
-1. Use the write_todos tool to create TODO just after recieving a user query, per the tool description.
+1. Use the write_todos tool to create TODO as soon as you receive the user's request, per the tool description.
 2. After you accomplish a TODO, use the read_todos to read the TODOs in order to remind yourself of the plan. 
 3. Reflect on what you've done and the TODO.
 4. Mark you task as completed, and proceed to the next TODO.
@@ -73,7 +73,7 @@ Important: This replaces the entire file content."""
 FILE_USAGE_INSTRUCTIONS = """You have access to a virtual file system to help you retain and save context.
 
 ## Workflow Process
-1. **Orient**: Use ls() as soon as you recieve the query to see existing files before starting to work
+1. **Orient**: Use ls() to see existing files before starting work
 2. **Save**: Use write_file() to store the user's request so that we can keep it for later 
 3. **Research**: Proceed with research. The search tool will write files.  
 4. **Read**: Once you are satisfied with the collected sources, read the files and use them to answer the user's question directly.
@@ -95,8 +95,6 @@ Your role is to coordinate research by delegating specific research tasks to sub
 1. **task(description, subagent_type)**: Delegate research tasks to specialized sub-agents
    - description: Clear, specific research question or task
    - subagent_type: Type of agent to use (e.g., "research-agent")
-2. **think_tool(reflection)**: Reflect on the results of each delegated task and plan next steps.
-   - reflection: Your detailed reflection on the results of the task and next steps.
 
 **PARALLEL RESEARCH**: When you identify multiple independent research directions, make multiple **task** tool calls in a single response to enable parallel execution. Use at most {max_concurrent_research_units} parallel agents per iteration.
 </Available Tools>
@@ -162,9 +160,6 @@ You can use any of the tools provided to you to find resources that can help ans
 <Available Tools>
 You have access to two main tools:
 1. **tavily_search**: For conducting web searches to gather information
-2. **think_tool**: For reflection and strategic planning during research
-
-**CRITICAL: Use think_tool after each search to reflect on results and plan next steps**
 </Available Tools>
 
 <Instructions>
@@ -189,12 +184,4 @@ Think like a human researcher with limited time. Follow these steps:
 - You have 3+ relevant examples/sources for the question
 - Your last 2 searches returned similar information
 </Hard Limits>
-
-<Show Your Thinking>
-After each search tool call, use think_tool to analyze the results:
-- What key information did I find?
-- What's missing?
-- Do I have enough to answer the question comprehensively?
-- Should I search more or provide my answer?
-</Show Your Thinking>
 """

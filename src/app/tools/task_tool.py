@@ -58,7 +58,7 @@ def _create_task_tool(tools, subagents: list[SubAgent], model, state_schema):
             _tools = tools
         agents[_agent["name"]] = create_react_agent(
             model, prompt=_agent["prompt"], tools=_tools, state_schema=state_schema
-        )
+        ).with_config({"recursion_limit": 20})
 
     # Generate description of available sub-agents for the tool description
     other_agents_string = [

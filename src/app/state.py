@@ -1,4 +1,4 @@
-from typing import Annotated, Literal, Optional
+from typing import Annotated, Literal, Optional, NotRequired
 from typing_extensions import TypedDict
 
 from langgraph.prebuilt.chat_agent_executor import AgentState
@@ -43,5 +43,8 @@ class DeepAgentState(AgentState):
     - files: Virtual file system stored as dict mapping filenames to content
     """
 
-    todos: Optional[list[Todo]]
-    files: Annotated[dict[str, str], file_reducer] = {}
+    todos: NotRequired[list[Todo]]
+    files: Annotated[NotRequired[dict[str, str]], file_reducer]
+    # Research control fields
+    research_search_budget: NotRequired[int]
+    research_done: NotRequired[bool]
