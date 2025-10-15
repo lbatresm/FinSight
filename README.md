@@ -21,3 +21,10 @@ using sub-agents and carefully-crafted prompts.
 - Python ≥ **3.11**  
 - [Poetry](https://python-poetry.org/)  for dependency management.  
 - Dependencies should be error-free in the .toml file. If you encounter problems with the langchain dependencies, check [langchain version compatibility table.](https://python.langchain.com/docs/versions/v0_3/)
+
+---
+
+## ⌛ Soon
+
+- Fiancial Stock Data API will be implemented for financial requests
+- Quantitative finance tools

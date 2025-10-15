@@ -35,6 +35,7 @@ OPENAI_API_KEY = os.environ['OPENAI_API_KEY']
 CO_API_KEY = os.environ['CO_API_KEY']
 LANGCHAIN_API_KEY = os.environ['LANGCHAIN_API_KEY']
 
+
 # Set langsmith for tracing
 LANGSMITH_API_KEY = os.environ['LANGSMITH_API_KEY']
 LANGSMITH_TRACING = os.environ['LANGSMITH_TRACING']
@@ -80,10 +81,6 @@ LANGSMITH_PROJECT = os.environ['LANGSMITH_PROJECT']
 # ----Code----
 # Configurations
 model = ChatOpenAI(model="gpt-4o-mini", temperature=0.0)
-
-# Limits
-max_concurrent_research_units = 3
-max_researcher_iterations = 3
 
 # Tools
 built_in_tools = [ls, read_file, write_file, write_todos, read_todos]
