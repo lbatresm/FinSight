@@ -11,23 +11,35 @@ from langgraph.types import Command
 
 from langgraph.prebuilt.chat_agent_executor import AgentState
 
-@tool
-def compound_interest(
+from pydantic import BaseModel, Field
+
+# Create a class for tool function inputs. This introduces types and values validation.
+class CompoundInterestInput(BaseModel):
+    """Input for compound interest calculator."""
+    initial_balance: float = Field(..., description = "Initial deposit or balance in the account.")
+    periodic_deposit: float = Field(..., description = "Deposit made at the end of each period")
+    deposit_frequency: Literal["weekly", "monthly", "annually"] = Field(default="annually",
+        description="Deposit frequency: 'weekly', 'monthly', or 'annually'")
+    interest_rate: float = Field(..., description="Annual interest rate as a percentage (e.g., 7.5 for 7.5%)")
+    years: int = Field(..., description="Number of years to calculate")
+    
+@tool(args_schema=CompoundInterestInput)
+def compound_interest_calculator(
     initial_balance: float,
     periodic_deposit: float,
-    deposit_frequency: str,
     interest_rate: float,
-    years: int):
+    years: int,
+    deposit_frequency: str = "annually") -> list:
     """
     Compound interest calculator tool.
     
     Args:
         initial_balance (float): Initial balance
         periodic_deposit (float): Periodic deposit made at end of period
-        deposit_frequency (str): Deposit frequency ("weekly", "monthly", "annually")
         interest_rate (float): Annual interest rate (as percentage, eg: 7.5 para 7.5%)
         years (int): Number of years
-    
+        deposit_frequency (str): Deposit frequency ("weekly", "monthly", "annually")
+
     Returns:
         list: List of dictionaries with yearly data
     
@@ -44,7 +56,7 @@ def compound_interest(
     elif deposit_frequency == "annually":
         n = 1
     else:
-        raise ValueError(f"Unvalid deposit frequency: {deposit_frequency}. Use 'weekly', 'monthly', o 'annually'")
+        raise ValueError(f"Invalid deposit frequency: {deposit_frequency}. Use 'weekly', 'monthly', or 'annually'")
     
     # cf = (initial_balance * (1 + interest_rate / n) ** (n * years)
     # + periodic_deposit * (((1 + interest_rate / n) ** (n * years) - 1) / (interest_rate / n)))
@@ -71,19 +83,21 @@ def compound_interest(
     
     return data
 
-        
-def main():
-    try:
-        data = compound_interest(865, 123, "monthly", 7.5, 12)
-        print("Resultados del cálculo de interés compuesto:")
-        for year_data in data:
-            print(f"Año {year_data['year']}: Balance = ${year_data['balance']:.2f}, "
-                  f"initial_balance = ${year_data['initial_balance']:.2f}, "
-                  f"Depósitos totales = ${year_data['total_deposit']:.2f}, "
-                  f"Intereses totales = ${year_data['total_interest']:.2f}")
-                  
-    except Exception as e:
-        print(f"Error: {e}")
 
-if __name__ == "__main__":
-    main()
+
+# FOR TESTS
+# def main():
+#     try:
+#         data = compound_interest_calculator(865, 123, "monthly", 7.5, 12)
+#         print("Resultados del cálculo de interés compuesto:")
+#         for year_data in data:
+#             print(f"Año {year_data['year']}: Balance = ${year_data['balance']:.2f}, "
+#                   f"initial_balance = ${year_data['initial_balance']:.2f}, "
+#                   f"Depósitos totales = ${year_data['total_deposit']:.2f}, "
+#                   f"Intereses totales = ${year_data['total_interest']:.2f}")
+                  
+#     except Exception as e:
+#         print(f"Error: {e}")
+
+# if __name__ == "__main__":
+#     main()
