@@ -84,4 +84,3 @@ def compound_interest_calculator(
     return data
 
 
-

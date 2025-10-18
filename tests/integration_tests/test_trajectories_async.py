@@ -36,7 +36,7 @@ def test_compound_interest_trajectory():
             "tool_calls": [
                 {
                     "function": {
-                        "name": "compound_interest_calculatoor",
+                        "name": "compound_interest_calculator",
                         "arguments": json.dumps(
                             {
                                 "initial_balance": 100,

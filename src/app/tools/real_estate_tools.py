@@ -2,7 +2,6 @@
 Real Estate profitability computation tools for LLMs
 """
 
-from re import A
 from typing import Annotated, List, Literal, Union, Optional
 
 from langchain_core.messages import ToolMessage
