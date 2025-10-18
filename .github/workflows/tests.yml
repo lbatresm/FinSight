@@ -1,0 +1,52 @@
+# name: Run Unit and Integration Tests
+
+# on:
+#   push:
+#     branches: [ main, development ]
+#   pull_request:
+#     branches: [ main, development ]
+
+# jobs:
+#   test:
+#     runs-on: ubuntu-latest
+
+#     env:
+#       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+#       CO_API_KEY: ${{ secrets.CO_API_KEY }}
+#       LANGCHAIN_API_KEY: ${{ secrets.LANGCHAIN_API_KEY }}
+#       LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
+#       LANGSMITH_TRACING: ${{ secrets.LANGSMITH_TRACING }}
+#       LANGSMITH_ENDPOINT: ${{ secrets.LANGSMITH_ENDPOINT }}
+#       LANGSMITH_PROJECT: ${{ secrets.LANGSMITH_PROJECT }}
+
+#     strategy:
+#       matrix:
+#         python-version: [3.11]
+
+#     steps:
+#       - name: Checkout repository
+#         uses: actions/checkout@v4
+
+#       - name: Set up Python
+#         uses: actions/setup-python@v5
+#         with:
+#           python-version: ${{ matrix.python-version }}
+
+#       - name: Install Poetry
+#         run: |
+#           python -m pip install --upgrade pip
+#           pip install pipx
+#           pipx install poetry
+
+#       - name: Install dependencies with Poetry
+#         run: |
+#           poetry install --no-interaction --no-root
+
+#       - name: Run Unit Tests
+#         run: |
+#           poetry run pytest tests/unit_tests -v --disable-warnings
+
+#       - name: Run Integration Tests
+#         if: ${{ env.OPENAI_API_KEY != '' && env.LANGCHAIN_API_KEY != '' && env.LANGSMITH_API_KEY != '' && env.LANGSMITH_TRACING != '' && env.LANGSMITH_ENDPOINT != '' && env.LANGSMITH_PROJECT != '' }}
+#         run: |
+#           poetry run pytest tests/integration_tests -v --disable-warnings
