@@ -357,8 +357,7 @@ def real_estate_profitability_calculator(
         first_year_interest_expense += monthly_interest_expense
 
     # Compute annual operating expenses
-    # Property management and maintenance
-    # (typically 8-12% of gross rental income)
+    # Property management and maintenance (typically 8-12% of gross rental income)
     property_management_fee = 0.10 * annual_gross_rental_income
     
     total_annual_operating_expenses = (
@@ -391,13 +390,13 @@ def real_estate_profitability_calculator(
     net_income_after_taxes = net_operating_income - income_tax_on_rental
     
     # Compute profitability metrics
-    gross_rental_yield = annual_gross_rental_income / purchase_price
+    gross_rental_yield = annual_gross_rental_income / total_acquisition_cost
     net_rental_yield_conservative = (
-        net_income_after_taxes / purchase_price
+        net_income_after_taxes / total_acquisition_cost
     )
     net_rental_yield_optimistic = (
         (net_income_after_taxes + (vacancy_allowance or 0) +
-         maintenance_cost) / purchase_price
+         maintenance_cost) / total_acquisition_cost
     )
     
     # Cash flow analysis
@@ -415,12 +414,13 @@ def real_estate_profitability_calculator(
         (vacancy_allowance or 0) + maintenance_cost
     )
     
-    # Cash-on-Cash Return (ROI on invested capital)
-    cash_on_cash_return_conservative = (
-        annual_cash_flow_conservative / down_payment
+    # ROCE (Return on Capital Employed)
+    total_upfront_cost = total_acquisition_cost - mortgage_loan_amount
+    roce_conservative = (
+        annual_cash_flow_conservative / total_upfront_cost
     )
-    cash_on_cash_return_optimistic = (
-        annual_cash_flow_optimistic / down_payment
+    roce_optimistic = (
+        annual_cash_flow_optimistic / total_upfront_cost
     )
     
     # Return comprehensive analysis results
@@ -446,8 +446,7 @@ def real_estate_profitability_calculator(
             "analysis_category": "Mortgage Financing Details",
             "monthly_mortgage_payment": monthly_mortgage_payment,
             "annual_mortgage_payment": annual_mortgage_payment,
-            "first_year_interest_expense": first_year_interest_expense,
-            # Won't give annual interest payment to consider variable interest rates
+            "first_year_interest_expense": first_year_interest_expense, #Or yearly interest for fixed rates
             "annual_principal_payment": annual_principal_payment,
         },
         {
@@ -455,8 +454,10 @@ def real_estate_profitability_calculator(
             "gross_rental_yield": gross_rental_yield,
             "net_rental_yield_conservative": net_rental_yield_conservative,
             "net_rental_yield_optimistic": net_rental_yield_optimistic,
-            "cash_on_cash_return_conservative": cash_on_cash_return_conservative,
-            "cash_on_cash_return_optimistic": cash_on_cash_return_optimistic
+            "annual_cash_flow_conservative": annual_cash_flow_conservative,
+            "annual_cash_flow_optimistic": annual_cash_flow_optimistic,
+            "roce_conservative": roce_conservative,
+            "roce_optimistic": roce_optimistic
         },
         {
             "analysis_category": "Cash Flow Analysis",
