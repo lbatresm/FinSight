@@ -3,6 +3,7 @@ Real Estate profitability computation tools for LLMs
 """
 
 from typing import Annotated, List, Literal, Union, Optional
+import numpy as np
 
 from langchain_core.messages import ToolMessage
 from langchain_core.tools import InjectedToolCallId, tool
@@ -20,7 +21,7 @@ class RealEstateProfitabilityInput(BaseModel):
     purchase_price: int = Field(...)
     autonomous_community: Literal["Andalucía", "Aragón", "Asturias", "Islas Baleares", "Canarias",
     "Cantabria", "Castilla-La Mancha", "Castilla y León", "Cataluña", "Comunidad Valenciana", 
-    "Extremadura", "Galicia", "Madrid", "Murcia", "Navarra", "País Vasco", "La Rioja",
+    "Extremadura", "Galicia", "Comunidad de Madrid", "Murcia", "Navarra", "País Vasco", "La Rioja",
     "Ceuta", "Melilla"
     ] = Field(..., description = "The autonomous community determines the ITP")
     notary_cost: int = Field(...)
@@ -32,40 +33,40 @@ class RealEstateProfitabilityInput(BaseModel):
     mortgage_management_cost: int = Field(...)
     mortgage_appraisal_cost: int = Field(...)
     
-    """Rental"""
-    monthly_rent: int = Field(...)
+    """Rental Income"""
+    monthly_rental_income: int = Field(..., description="Monthly rental income expected")
 
-    """Annual expenses estimation"""
-    community_fee: int = Field(...)
-    home_insurance: int = Field(...)
-    mortgage_life_insurance: Optional[int] # Optional field
-    has_non_payment_insurance: Literal ["Y", "N"] = Field(..., )
-    non_payment_insurance: Optional[float] = Field(None, description="Amount of non-payment insurance (if applicable)")
-    ibi_tax: int = Field(...)
-    vacant_periods: Optional[float] = Field(None, description="Vacancy margin (default 5%)")
+    """Annual Operating Expenses"""
+    homeowners_association_fee: int = Field(..., description="Monthly HOA/community fees (annualized)")
+    property_insurance: int = Field(..., description="Annual property insurance premium")
+    mortgage_life_insurance: Optional[int] = Field(None, description="Annual mortgage life insurance premium")
+    has_rental_protection_insurance: Literal["Y", "N"] = Field(..., description="Whether rental protection insurance is included")
+    rental_protection_insurance: Optional[float] = Field(None, description="Annual rental protection insurance premium")
+    property_tax_ibi: int = Field(..., description="Annual property tax (IBI)")
+    vacancy_allowance: Optional[float] = Field(None, description="Annual vacancy allowance (default 5% of gross rental income)")
 
     """Income tax (IRPF)"""
     annual_gross_salary: int = Field(..., description="Property owner's annual gross salary")
     irpf_tax: Optional[float] = Field(None, description="IRPF tax withholding percentage based on salary")
 
-    """Financing"""
-    financed_percentage: float = Field(..., ge=0, le=1, description="Financed percentage expressed as decimal (e.g. 0.90 = 90%)")
-    loan_term_years: int = Field(..., ge=5, le=40)
-    mortgage_type: Literal["fixed", "variable"] = Field(..., description="Mortgage type")
-    mortgage_spread: Optional[float] = Field(None, description="Mortgage spread, if variable")
-    euribor: Optional[float] = Field(None, description="Euribor, if variable")
-    fixed_interest_rate: Optional[float] = Field(None, description="Fixed interest rate, if fixed")
-    variable_interest_rate: Optional[float] = Field(None, description="Variable interest rate, if variable")
+    """Mortgage Financing"""
+    loan_to_value_ratio: float = Field(..., ge=0, le=1, description="Financed percentage expressed as decimal (e.g. 0.80 = 80% LTV)")
+    loan_term_years: int = Field(..., ge=5, le=40, description="Mortgage term in years")
+    mortgage_type: Literal["fixed", "variable"] = Field(..., description="Mortgage interest rate type")
+    mortgage_margin: Optional[float] = Field(None, description="Mortgage margin over Euribor for variable rate mortgages")
+    euribor_rate: Optional[float] = Field(None, description="Current Euribor rate for variable mortgages")
+    fixed_interest_rate: Optional[float] = Field(None, description="Fixed interest rate (annual percentage)")
+    variable_interest_rate: Optional[float] = Field(None, description="Variable interest rate (annual percentage)")
 
     @model_validator(mode="after")
     def calculate_automatic_fields(self):
-        # Calculate non-payment insurance if applicable
-        if self.has_non_payment_insurance == "Y":
-            self.non_payment_insurance = self.monthly_rent * 12 * 0.05
+        # Calculate rental protection insurance if applicable
+        if self.has_rental_protection_insurance == "Y":
+            self.rental_protection_insurance = self.monthly_rental_income * 12 * 0.05
 
-        # Calculate vacant periods by default
-        if self.vacant_periods is None:
-            self.vacant_periods = 0.05 * 12 * self.monthly_rent
+        # Calculate vacancy allowance by default
+        if self.vacancy_allowance is None:
+            self.vacancy_allowance = 0.05 * 12 * self.monthly_rental_income
 
         # Calculate income tax bracket
         salary = self.annual_gross_salary
@@ -84,19 +85,18 @@ class RealEstateProfitabilityInput(BaseModel):
 
         # Validate financing data consistency
         if self.mortgage_type == "variable":
-            if self.mortgage_spread is None or self.euribor is None:
+            if self.mortgage_margin is None or self.euribor_rate is None:
                 raise ValueError(
-                    "If mortgage type is 'variable', 'mortgage_spread' and 'euribor' must be specified."
+                    "If mortgage type is 'variable', 'mortgage_margin' and 'euribor_rate' must be specified."
                 )
+            else:
+                self.variable_interest_rate = self.mortgage_margin + self.euribor_rate
         elif self.mortgage_type == "fixed":
             if self.fixed_interest_rate is None:
                 raise ValueError(
                     "If mortgage type is 'fixed', 'fixed_interest_rate' must be specified."
                 )
-
-        # Compute variable interest 
-        if self.mortgage_type == "variable":
-
+           
 
         return self
 
@@ -106,7 +106,7 @@ def real_estate_profitability_calculator(
     purchase_price: int,
     autonomous_community: Literal["Andalucía", "Aragón", "Asturias", "Islas Baleares", "Canarias",
     "Cantabria", "Castilla-La Mancha", "Castilla y León", "Cataluña", "Comunidad Valenciana", 
-    "Extremadura", "Galicia", "Madrid", "Murcia", "Navarra", "País Vasco", "La Rioja",
+    "Extremadura", "Galicia", "Comunidad de Madrid", "Murcia", "Navarra", "País Vasco", "La Rioja",
     "Ceuta", "Melilla"
     ],
     notary_cost: int,
@@ -115,24 +115,24 @@ def real_estate_profitability_calculator(
     agency_commission: int,
     mortgage_management_cost: int,
     mortgage_appraisal_cost: int,
-    monthly_rent: int,
-    community_fee: int,
-    home_insurance: int,
+    monthly_rental_income: int,
+    homeowners_association_fee: int,
+    property_insurance: int,
     mortgage_life_insurance: Optional[int],
-    has_non_payment_insurance: Literal ["Y", "N"],
-    non_payment_insurance: Optional[float],
-    ibi_tax: int,
-    vacant_periods: Optional[float],
+    has_rental_protection_insurance: Literal["Y", "N"],
+    rental_protection_insurance: Optional[float],
+    property_tax_ibi: int,
+    vacancy_allowance: Optional[float],
     annual_gross_salary: int,
     irpf_tax: Optional[float],
-    financed_percentage: float,
+    loan_to_value_ratio: float,
     loan_term_years: int,
     mortgage_type: Literal["fixed", "variable"],
-    mortgage_spread: Optional[float],
-    euribor: Optional[float],
-    fixed_interest_rate: Optional[float]) -> list:
+    mortgage_margin: Optional[float],
+    euribor_rate: Optional[float],
+    fixed_interest_rate: Optional[float],
+    variable_interest_rate: Optional[float]) -> list:
  
-
     def calculate_itp(autonomous_community):
         ITP_BY_COMMUNITY = {
             "Andalucía": 7.0,
@@ -160,32 +160,124 @@ def real_estate_profitability_calculator(
             raise ValueError(f"The autonomous community {autonomous_community} is not in the list.")
         
         itp_rate = ITP_BY_COMMUNITY[autonomous_community] / 100 # % to decimal
-        itp_to_pay = purchase_price * itp_rate / 100
+        itp_to_pay = purchase_price * itp_rate
         return itp_rate, itp_to_pay
 
     # Compute ITP tax to pay
     itp_rate, itp_to_pay = calculate_itp(autonomous_community) #TODO: Try to compute this in class validators
 
-    # Compute annual rent
-    annual_rent = monthly_rent * 12
+    # Compute annual gross rental income
+    annual_gross_rental_income = monthly_rental_income * 12
 
-    # Compute annual costs
-    manteinance_costs = 0.1 * annual_rent
-    total_annual_costs = community_fee + manteinance_costs + home_insurance + mortgage_life_insurance + non_payment_insurance + ibi_tax + monthly_mortgage_interests + vacant_periods
+    # Compute mortgage financing
+    mortgage_loan_amount = purchase_price * loan_to_value_ratio
+    down_payment = purchase_price - mortgage_loan_amount
+    if mortgage_type == "variable":
+        monthly_interest_rate = variable_interest_rate / 12
+    elif mortgage_type == "fixed":
+        monthly_interest_rate = fixed_interest_rate / 12
 
-    # Compute earnings
-    ebta = annual_rent - total_annual_costs
-    yearly_amortization = 0.03 * (0.3 * purchase_price + 0.5 * (itp_to_pay + notary_cost + registry_cost) + agency_commission)
-    taxes = (ebta - yearly_amortization) * (1 - 0.05) * irpf_tax
-    net_income_after_tax  = ebta - taxes
-
-    # Compute financing
-    mortgage_loan = purchase_price * financed_percentage
-    contributed_capital = purchase_price - mortgage_loan
-
-
-
-
-
-
+    # PMT = Payment: Compute periodic payment for loan based on ctnt payments and ctnt interest rates
+    number_of_payments = loan_term_years * 12  # Monthly payments
+    monthly_mortgage_payment = np.pmt(monthly_interest_rate, number_of_payments, mortgage_loan_amount) 
+    total_mortgage_payments = number_of_payments * monthly_mortgage_payment
+    total_interest_over_life = total_mortgage_payments - mortgage_loan_amount
+    annual_mortgage_payment = monthly_mortgage_payment * 12
     
+    # Calculate first year interest expense (more accurate than dividing total by years)
+    remaining_principal_balance = mortgage_loan_amount
+    first_year_interest_expense = 0
+    for month in range(12):
+        monthly_interest_expense = remaining_principal_balance * monthly_interest_rate
+        principal_payment = monthly_mortgage_payment - monthly_interest_expense
+        remaining_principal_balance -= principal_payment
+        first_year_interest_expense += monthly_interest_expense
+
+    # Compute annual operating expenses
+    # Property management and maintenance (typically 8-12% of gross rental income)
+    property_management_fee = 0.10 * annual_gross_rental_income
+    
+    # Repairs and maintenance (typically 1-2% of property value annually)
+    repairs_and_maintenance = 0.015 * purchase_price
+    
+    total_annual_operating_expenses = (
+        homeowners_association_fee + 
+        property_management_fee + 
+        repairs_and_maintenance + 
+        property_insurance + 
+        mortgage_life_insurance + 
+        rental_protection_insurance + 
+        property_tax_ibi + 
+        first_year_interest_expense + 
+        vacancy_allowance
+    )
+
+    # Compute net operating income (NOI)
+    net_operating_income = annual_gross_rental_income - total_annual_operating_expenses
+    
+    # Calculate depreciation expense (typically 2-3% of property value annually)
+    annual_depreciation_expense = 0.025 * purchase_price  # 2.5% annual depreciation
+    
+    # Tax calculation for rental income in Spain
+    # Rental income is taxed at marginal IRPF rate, with depreciation deductions allowed
+    taxable_rental_income = net_operating_income - annual_depreciation_expense
+    income_tax_on_rental = taxable_rental_income * irpf_tax
+    
+    net_income_after_taxes = net_operating_income - income_tax_on_rental
+    
+    # Compute profitability metrics
+    gross_rental_yield = annual_gross_rental_income / purchase_price
+    net_rental_yield_conservative = net_income_after_taxes / purchase_price
+    net_rental_yield_optimistic = (net_income_after_taxes + vacancy_allowance + repairs_and_maintenance) / purchase_price
+    
+    # Cash flow analysis
+    # Principal payment = total mortgage payment - interest payment
+    annual_principal_payment = annual_mortgage_payment - first_year_interest_expense
+    
+    # Cash flow = money remaining after paying mortgage principal
+    annual_cash_flow_conservative = net_income_after_taxes - annual_principal_payment
+    annual_cash_flow_optimistic = annual_cash_flow_conservative + vacancy_allowance + repairs_and_maintenance
+    
+    # Cash-on-Cash Return (ROI on invested capital)
+    cash_on_cash_return_conservative = annual_cash_flow_conservative / down_payment
+    cash_on_cash_return_optimistic = annual_cash_flow_optimistic / down_payment
+    
+    # Return comprehensive analysis results
+    return [
+        {
+            "analysis_category": "Property Acquisition Analysis",
+            "purchase_price": purchase_price,
+            "itp_tax_amount": itp_to_pay,
+            "total_acquisition_cost": purchase_price + itp_to_pay + notary_cost + registry_cost + renovation_cost + agency_commission,
+            "down_payment": down_payment,
+            "mortgage_loan_amount": mortgage_loan_amount
+        },
+        {
+            "analysis_category": "Annual Income & Operating Expenses",
+            "annual_gross_rental_income": annual_gross_rental_income,
+            "total_annual_operating_expenses": total_annual_operating_expenses,
+            "net_operating_income": net_operating_income,
+            "income_tax_on_rental": income_tax_on_rental,
+            "net_income_after_taxes": net_income_after_taxes
+        },
+        {
+            "analysis_category": "Mortgage Financing Details",
+            "monthly_mortgage_payment": monthly_mortgage_payment,
+            "annual_mortgage_payment": annual_mortgage_payment,
+            "first_year_interest_expense": first_year_interest_expense,
+            "annual_principal_payment": annual_principal_payment
+        },
+        {
+            "analysis_category": "Profitability Metrics",
+            "gross_rental_yield": gross_rental_yield,
+            "net_rental_yield_conservative": net_rental_yield_conservative,
+            "net_rental_yield_optimistic": net_rental_yield_optimistic,
+            "cash_on_cash_return_conservative": cash_on_cash_return_conservative,
+            "cash_on_cash_return_optimistic": cash_on_cash_return_optimistic
+        },
+        {
+            "analysis_category": "Cash Flow Analysis",
+            "annual_cash_flow_conservative": annual_cash_flow_conservative,
+            "annual_cash_flow_optimistic": annual_cash_flow_optimistic
+        }
+    ]
