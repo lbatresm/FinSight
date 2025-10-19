@@ -55,6 +55,7 @@ class RealEstateProfitabilityInput(BaseModel):
     mortgage_spread: Optional[float] = Field(None, description="Mortgage spread, if variable")
     euribor: Optional[float] = Field(None, description="Euribor, if variable")
     fixed_interest_rate: Optional[float] = Field(None, description="Fixed interest rate, if fixed")
+    variable_interest_rate: Optional[float] = Field(None, description="Variable interest rate, if variable")
 
     @model_validator(mode="after")
     def calculate_automatic_fields(self):
@@ -92,6 +93,10 @@ class RealEstateProfitabilityInput(BaseModel):
                 raise ValueError(
                     "If mortgage type is 'fixed', 'fixed_interest_rate' must be specified."
                 )
+
+        # Compute variable interest 
+        if self.mortgage_type == "variable":
+
 
         return self
 
@@ -175,6 +180,8 @@ def real_estate_profitability_calculator(
     net_income_after_tax  = ebta - taxes
 
     # Compute financing
+    mortgage_loan = purchase_price * financed_percentage
+    contributed_capital = purchase_price - mortgage_loan
 
 
 
