@@ -45,6 +45,6 @@ jobs:
           poetry run pytest tests/unit_tests -v --disable-warnings
 
       - name: Run Integration Tests
-        if: ${{ env.OPENAI_API_KEY != '' && env.LANGCHAIN_API_KEY != '' && env.LANGSMITH_API_KEY != '' && env.LANGSMITH_TRACING != '' && env.LANGSMITH_ENDPOINT != '' && env.LANGSMITH_PROJECT != '' }}
+        if: ${{ env.OPENAI_API_KEY != '' && env.LANGCHAIN_API_KEY != '' && env.LANGSMITH_TRACING != '' && env.LANGSMITH_ENDPOINT != '' && env.LANGSMITH_PROJECT != '' }}
         run: |
           poetry run pytest tests/integration_tests -v --disable-warnings

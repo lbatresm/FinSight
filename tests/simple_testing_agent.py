@@ -16,7 +16,6 @@ import src.app.tools.financial_tools as ft
 # Load environment variables
 load_dotenv()
 OPENAI_API_KEY = os.environ['OPENAI_API_KEY']
-CO_API_KEY = os.environ['CO_API_KEY']
 LANGCHAIN_API_KEY = os.environ['LANGCHAIN_API_KEY']
 
 # Set langsmith for tracing
