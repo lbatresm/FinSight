@@ -14,6 +14,7 @@ The goal is to explore how AI can **analyze, summarize, and generate meaningful 
 - 🔎 Financial data processing and analysis.  
 - 🕵️‍♂️ Based on **Deep Agents** with to-do planning capability, access to a file system for context offloading, task delegation
 using sub-agents and carefully-crafted prompts.
+- 🛠️ Tools (already implemented): **compound interest calculator**, **Real Estate investment simulation tool**.
 
 ---
 

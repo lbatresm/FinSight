@@ -2,6 +2,7 @@
 Real Estate profitability computation tools for LLMs
 """
 
+from ast import main
 from typing import Annotated, List, Literal, Union, Optional
 import numpy_financial as npf
 
@@ -42,6 +43,10 @@ class RealEstateProfitabilityInput(BaseModel):
     monthly_rental_income: int = Field(..., description="Monthly rental income expected")
 
     """Annual Operating Expenses"""
+    maintenance_cost: Optional[float] = Field(
+        None,
+        description="Annual maintenance cost (default 10% of gross rental income)"
+    )
     homeowners_association_fee: int = Field(
         ...,
         description="Monthly HOA/community fees (annualized)"
@@ -123,6 +128,10 @@ class RealEstateProfitabilityInput(BaseModel):
                 self.monthly_rental_income * 12 * 0.05
             )
 
+        # Calculate maintenance cost if not provided
+        if self.maintenance_cost is None:
+            self.maintenance_cost = 0.10 * self.monthly_rental_income * 12
+
         # Calculate vacancy allowance by default
         if self.vacancy_allowance is None:
             self.vacancy_allowance = 0.05 * 12 * self.monthly_rental_income
@@ -184,6 +193,7 @@ def real_estate_profitability_calculator(
     mortgage_appraisal_cost: int,
     monthly_rental_income: int,
     homeowners_association_fee: int,
+    maintenance_cost: Optional[float],
     property_insurance: int,
     mortgage_life_insurance: Optional[int],
     has_rental_protection_insurance: Literal["Y", "N"],
@@ -220,6 +230,7 @@ def real_estate_profitability_calculator(
         mortgage_appraisal_cost: Property appraisal cost
         monthly_rental_income: Expected monthly rental income
         homeowners_association_fee: HOA/community fees (annualized)
+        maintenance_cost: Annual maintenance cost (default 10% of gross rental income)
         property_insurance: Annual property insurance premium
         mortgage_life_insurance: Mortgage-linked life insurance
         has_rental_protection_insurance: Whether rental protection insurance included ("Y"/"N")
@@ -300,6 +311,12 @@ def real_estate_profitability_calculator(
     itp_rate, itp_to_pay = calculate_itp(autonomous_community)
     # TODO: Try to compute this in class validators
 
+    # Compute total acquisition cost (including mortgage management and appraisal costs)
+    total_acquisition_cost = (
+        purchase_price + itp_to_pay + notary_cost + registry_cost +
+        renovation_cost + agency_commission + mortgage_management_cost + mortgage_appraisal_cost
+    )
+
     # Compute annual gross rental income
     annual_gross_rental_income = monthly_rental_income * 12
 
@@ -344,14 +361,9 @@ def real_estate_profitability_calculator(
     # (typically 8-12% of gross rental income)
     property_management_fee = 0.10 * annual_gross_rental_income
     
-    # Repairs and maintenance
-    # (typically 1-2% of property value annually)
-    repairs_and_maintenance = 0.015 * purchase_price
-    
     total_annual_operating_expenses = (
         homeowners_association_fee + 
-        property_management_fee + 
-        repairs_and_maintenance + 
+        maintenance_cost + 
         property_insurance + 
         (mortgage_life_insurance or 0) + 
         (rental_protection_insurance or 0) + 
@@ -385,7 +397,7 @@ def real_estate_profitability_calculator(
     )
     net_rental_yield_optimistic = (
         (net_income_after_taxes + (vacancy_allowance or 0) +
-         repairs_and_maintenance) / purchase_price
+         maintenance_cost) / purchase_price
     )
     
     # Cash flow analysis
@@ -400,7 +412,7 @@ def real_estate_profitability_calculator(
     )
     annual_cash_flow_optimistic = (
         annual_cash_flow_conservative +
-        (vacancy_allowance or 0) + repairs_and_maintenance
+        (vacancy_allowance or 0) + maintenance_cost
     )
     
     # Cash-on-Cash Return (ROI on invested capital)
@@ -417,16 +429,14 @@ def real_estate_profitability_calculator(
             "analysis_category": "Property Acquisition Analysis",
             "purchase_price": purchase_price,
             "itp_tax_amount": itp_to_pay,
-            "total_acquisition_cost": (
-                purchase_price + itp_to_pay + notary_cost +
-                registry_cost + renovation_cost + agency_commission
-            ),
+            "total_acquisition_cost": total_acquisition_cost,
             "down_payment": down_payment,
             "mortgage_loan_amount": mortgage_loan_amount
         },
         {
             "analysis_category": "Annual Income & Operating Expenses",
             "annual_gross_rental_income": annual_gross_rental_income,
+            "first_year_interest_expense": first_year_interest_expense,
             "total_annual_operating_expenses": total_annual_operating_expenses,
             "net_operating_income": net_operating_income,
             "income_tax_on_rental": income_tax_on_rental,
@@ -437,7 +447,8 @@ def real_estate_profitability_calculator(
             "monthly_mortgage_payment": monthly_mortgage_payment,
             "annual_mortgage_payment": annual_mortgage_payment,
             "first_year_interest_expense": first_year_interest_expense,
-            "annual_principal_payment": annual_principal_payment
+            # Won't give annual interest payment to consider variable interest rates
+            "annual_principal_payment": annual_principal_payment,
         },
         {
             "analysis_category": "Profitability Metrics",

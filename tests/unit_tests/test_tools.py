@@ -18,30 +18,31 @@ def test_compound_interest():
 def test_real_estate_profitability_calculator():
     
     test_data = {
-        "purchase_price": 250000,
+        "purchase_price": 150000,
         "autonomous_community": "Comunidad de Madrid",
-        "notary_cost": 1500,
-        "registry_cost": 800,
-        "renovation_cost": 10000,
-        "agency_commission": 5000,
-        "mortgage_management_cost": 800,
-        "mortgage_appraisal_cost": 400,
-        "monthly_rental_income": 1200,
-        "homeowners_association_fee": 1200,  # 100€/month annualized
-        "property_insurance": 300,
-        "mortgage_life_insurance": 600,
+        "notary_cost": 500,
+        "registry_cost": 250,
+        "renovation_cost": 30000,
+        "agency_commission": 3000,
+        "mortgage_management_cost": 300,
+        "mortgage_appraisal_cost": 200,
+        "monthly_rental_income": 1000,
+        "homeowners_association_fee": 600,  # annualized
+        "maintenance_cost": None, # Will be calculated automatically as 10% rental income
+        "property_insurance": 100,
+        "mortgage_life_insurance": 150,
         "has_rental_protection_insurance": "Y",
         "rental_protection_insurance": None,  # Will be calculated automatically
-        "property_tax_ibi": 1200,
+        "property_tax_ibi": 160,
         "vacancy_allowance": None,  # Will be calculated automatically (5%)
-        "annual_gross_salary": 45000,
+        "annual_gross_salary": 38928,
         "irpf_tax": None,  # Will be calculated automatically
         "loan_to_value_ratio": 0.80,  # 80% LTV
         "loan_term_years": 25,
         "mortgage_type": "fixed",
         "mortgage_margin": None,
         "euribor_rate": None,
-        "fixed_interest_rate": 3.5,
+        "fixed_interest_rate": 2.5,
         "variable_interest_rate": None
     }
     
@@ -57,24 +58,27 @@ def test_real_estate_profitability_calculator():
     
     # Test Property Acquisition Analysis
     acquisition = categories["Property Acquisition Analysis"]
-    assert acquisition["purchase_price"] == 250000
-    assert acquisition["itp_tax_amount"] == 15000  # 6% of 250000
-    assert acquisition["down_payment"] == 50000  # 20% of 250000
-    assert acquisition["mortgage_loan_amount"] == 200000  # 80% of 250000
+    assert acquisition["purchase_price"] == 150000
+    assert acquisition["itp_tax_amount"] == 9000  # 6% of purchase price in Madrid
+    assert acquisition["total_acquisition_cost"] == 193250
+    assert acquisition["down_payment"] == 30000  # 20% of purchase price (80% LTV)
+    assert acquisition["mortgage_loan_amount"] == 120000  # 80% of 250000
     
     # Test Annual Income & Operating Expenses
     income_expenses = categories["Annual Income & Operating Expenses"]
-    assert income_expenses["annual_gross_rental_income"] == 14400  # 1200 * 12
-    
-    # For now, let's just check that NOI exists (can be negative in some scenarios)
-    assert "net_operating_income" in income_expenses
-    
+    assert income_expenses["annual_gross_rental_income"] == 12000  # 1000 * 12
+    assert int(income_expenses["first_year_interest_expense"]) == 2960
+    assert int(income_expenses["total_annual_operating_expenses"]) == 6370
+    assert round(income_expenses["net_operating_income"], 0) == 5630
+    assert round(income_expenses["income_tax_on_rental"], 0) == 696
+    assert round(income_expenses["net_income_after_taxes"], 0) == 4934
+
     # Test Mortgage Financing Details
     mortgage = categories["Mortgage Financing Details"]
-    assert mortgage["monthly_mortgage_payment"] > 0
-    assert mortgage["annual_mortgage_payment"] > 0
-    assert mortgage["first_year_interest_expense"] > 0
-    assert mortgage["annual_principal_payment"] > 0
+    assert int(mortgage["monthly_mortgage_payment"]) == 538
+    assert int(mortgage["annual_mortgage_payment"]) ==  6460
+    assert int(mortgage["first_year_interest_expense"]) == 2960
+    assert int(mortgage["annual_principal_payment"]) == 3500
     
     # Test Profitability Metrics
     profitability = categories["Profitability Metrics"]
@@ -86,14 +90,14 @@ def test_real_estate_profitability_calculator():
     assert "annual_cash_flow_optimistic" in cash_flow
     
     # Verify specific calculations
-    # Gross rental yield should be 5.76% (14400/250000)
-    assert abs(profitability["gross_rental_yield"] - 0.0576) < 0.001
+    # Gross rental yield should be 8% (12000/150000)
+    assert abs(profitability["gross_rental_yield"] - 0.08) < 0.001
     
     # ITP tax should be 6% for Madrid
-    assert acquisition["itp_tax_amount"] == 15000
+    assert acquisition["itp_tax_amount"] == 9000
     
     # Down payment should be 20% (1 - 0.80 LTV)
-    assert acquisition["down_payment"] == 50000
+    assert acquisition["down_payment"] == 30000
     
     print("\n[PASS] All real estate profitability calculator tests passed!")
     print(f"Gross Rental Yield: {profitability['gross_rental_yield']:.2%}")
@@ -115,6 +119,7 @@ def test_real_estate_profitability_calculator_variable_mortgage():
         "mortgage_appraisal_cost": 300,
         "monthly_rental_income": 1000,
         "homeowners_association_fee": 960,  # 80€/month annualized
+        "maintenance_cost": None,  # Will be calculated automatically
         "property_insurance": 250,
         "mortgage_life_insurance": 500,
         "has_rental_protection_insurance": "N",
