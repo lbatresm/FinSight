@@ -131,14 +131,27 @@ class RealEstateProfitabilityInput(BaseModel):
         # Calculate default values if not provided
         if self.maintenance_cost is None:
             self.maintenance_cost = 0.10 * self.monthly_rental_income * 12
+        # Align types to int to avoid Pydantic serialization warnings
         if self.notary_cost is None:
-            self.notary_cost = 0.02 * self.purchase_price
+            self.notary_cost = int(0.02 * self.purchase_price)
+        else:
+            self.notary_cost = int(self.notary_cost)
         if self.registry_cost is None:
-            self.registry_cost = 0.002 * self.purchase_price
+            self.registry_cost = int(0.002 * self.purchase_price)
         if self.agency_commission is None:
-            self.agency_commission = 0.02 * self.purchase_price
+            self.agency_commission = int(0.02 * self.purchase_price)
         if self.property_tax_ibi is None:
-            self.property_tax_ibi = 0.001 * self.purchase_price
+            self.property_tax_ibi = int(0.001 * self.purchase_price)
+        if self.mortgage_management_cost is not None:
+            self.mortgage_management_cost = int(self.mortgage_management_cost)
+        if self.mortgage_appraisal_cost is not None:
+            self.mortgage_appraisal_cost = int(self.mortgage_appraisal_cost)
+        if self.mortgage_life_insurance is not None:
+            self.mortgage_life_insurance = int(self.mortgage_life_insurance)
+        if self.homeowners_association_fee is not None:
+            self.homeowners_association_fee = int(self.homeowners_association_fee)
+        if self.property_insurance is not None:
+            self.property_insurance = int(self.property_insurance)
         if self.vacancy_allowance is None:
             self.vacancy_allowance = 0.05 * 12 * self.monthly_rental_income
 
@@ -183,38 +196,7 @@ class RealEstateProfitabilityInput(BaseModel):
 
 @tool(args_schema=RealEstateProfitabilityInput)
 def real_estate_profitability_calculator(
-    purchase_price: int,
-    autonomous_community: Literal[
-        "Andalucía", "Aragón", "Asturias", "Islas Baleares", "Canarias",
-        "Cantabria", "Castilla-La Mancha", "Castilla y León", "Cataluña",
-        "Comunidad Valenciana", "Extremadura", "Galicia",
-        "Comunidad de Madrid", "Murcia", "Navarra", "País Vasco",
-        "La Rioja", "Ceuta", "Melilla"
-    ],
-    notary_cost: int,
-    registry_cost: int,
-    renovation_cost: int,
-    agency_commission: int,
-    mortgage_management_cost: int,
-    mortgage_appraisal_cost: int,
-    monthly_rental_income: int,
-    homeowners_association_fee: int,
-    maintenance_cost: Optional[float],
-    property_insurance: int,
-    mortgage_life_insurance: Optional[int],
-    has_rental_protection_insurance: Literal["Y", "N"],
-    rental_protection_insurance: Optional[float],
-    property_tax_ibi: int,
-    vacancy_allowance: Optional[float],
-    annual_gross_salary: int,
-    irpf_tax: Optional[float],
-    loan_to_value_ratio: float,
-    loan_term_years: int,
-    mortgage_type: Literal["fixed", "variable"],
-    mortgage_margin: Optional[float],
-    euribor_rate: Optional[float],
-    fixed_interest_rate: Optional[float],
-    variable_interest_rate: Optional[float]
+    input_data: Optional[RealEstateProfitabilityInput] = None, **kwargs,
 ) -> list:
     """
     Calculate comprehensive profitability and financial analysis for Spanish 
@@ -280,6 +262,38 @@ def real_estate_profitability_calculator(
         ... )
     """
  
+    # Build model from kwargs if not provided directly (backward compatible)
+    if input_data is None:
+        input_data = RealEstateProfitabilityInput(**kwargs)
+
+    # Unpack input model into local variables for readability
+    purchase_price = input_data.purchase_price
+    autonomous_community = input_data.autonomous_community
+    notary_cost = input_data.notary_cost
+    registry_cost = input_data.registry_cost
+    renovation_cost = input_data.renovation_cost
+    agency_commission = input_data.agency_commission
+    mortgage_management_cost = input_data.mortgage_management_cost
+    mortgage_appraisal_cost = input_data.mortgage_appraisal_cost
+    monthly_rental_income = input_data.monthly_rental_income
+    homeowners_association_fee = input_data.homeowners_association_fee
+    maintenance_cost = input_data.maintenance_cost
+    property_insurance = input_data.property_insurance
+    mortgage_life_insurance = input_data.mortgage_life_insurance
+    has_rental_protection_insurance = input_data.has_rental_protection_insurance
+    rental_protection_insurance = input_data.rental_protection_insurance
+    property_tax_ibi = input_data.property_tax_ibi
+    vacancy_allowance = input_data.vacancy_allowance
+    annual_gross_salary = input_data.annual_gross_salary
+    irpf_tax = input_data.irpf_tax
+    loan_to_value_ratio = input_data.loan_to_value_ratio
+    loan_term_years = input_data.loan_term_years
+    mortgage_type = input_data.mortgage_type
+    mortgage_margin = input_data.mortgage_margin
+    euribor_rate = input_data.euribor_rate
+    fixed_interest_rate = input_data.fixed_interest_rate
+    variable_interest_rate = input_data.variable_interest_rate
+
     def calculate_itp(autonomous_community):
         ITP_BY_COMMUNITY = {
             "Andalucía": 7.0,
@@ -318,9 +332,16 @@ def real_estate_profitability_calculator(
     # TODO: Try to compute this in class validators
 
     # Compute total acquisition cost (including mortgage management and appraisal costs)
+    # Using or 0 to avoid NoneType errors in pydantic
     total_acquisition_cost = (
-        purchase_price + itp_to_pay + notary_cost + registry_cost +
-        renovation_cost + agency_commission + mortgage_management_cost + mortgage_appraisal_cost
+        (purchase_price or 0)
+        + (itp_to_pay or 0)
+        + (notary_cost or 0)
+        + (registry_cost or 0)
+        + (renovation_cost or 0)
+        + (agency_commission or 0)
+        + (mortgage_management_cost or 0)
+        + (mortgage_appraisal_cost or 0)
     )
 
     # Compute annual gross rental income
@@ -367,14 +388,14 @@ def real_estate_profitability_calculator(
     property_management_fee = 0.10 * annual_gross_rental_income
     
     total_annual_operating_expenses = (
-        homeowners_association_fee + 
-        maintenance_cost + 
-        property_insurance + 
-        (mortgage_life_insurance or 0) + 
-        (rental_protection_insurance or 0) + 
-        property_tax_ibi + 
-        first_year_interest_expense + 
-        (vacancy_allowance or 0)
+        (homeowners_association_fee or 0)
+        + (maintenance_cost or 0)
+        + (property_insurance or 0)
+        + (mortgage_life_insurance or 0)
+        + (rental_protection_insurance or 0)
+        + (property_tax_ibi or 0)
+        + (first_year_interest_expense or 0.0)
+        + (vacancy_allowance or 0)
     )
 
     # Compute net operating income (NOI)
