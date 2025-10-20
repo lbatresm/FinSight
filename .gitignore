@@ -5,3 +5,7 @@ __pycache__
 
 # Personal markdown files
 src/app/*.md
+
+# Unwanted files
+src/app/*.png
+src/app/agent.py
