@@ -30,14 +30,14 @@ class RealEstateProfitabilityInput(BaseModel):
         ...,
         description="The autonomous community determines the ITP"
     )
-    notary_cost: int = Field(...)
-    registry_cost: int = Field(...)
+    notary_cost: Optional[int] = Field(None)
+    registry_cost: Optional[int] = Field(None)
     renovation_cost: int = Field(...)
-    agency_commission: int = Field(...)
+    agency_commission: Optional[int] = Field(None)
 
     """Mortgage expenses"""
-    mortgage_management_cost: int = Field(...)
-    mortgage_appraisal_cost: int = Field(...)
+    mortgage_management_cost: Optional[int] = Field(None)
+    mortgage_appraisal_cost: Optional[int] = Field(None)
     
     """Rental Income"""
     monthly_rental_income: int = Field(..., description="Monthly rental income expected")
@@ -48,11 +48,11 @@ class RealEstateProfitabilityInput(BaseModel):
         description="Annual maintenance cost (default 10% of gross rental income)"
     )
     homeowners_association_fee: int = Field(
-        ...,
+        default=100,
         description="Monthly HOA/community fees (annualized)"
     )
     property_insurance: int = Field(
-        ...,
+        default=100,
         description="Annual property insurance premium"
     )
     mortgage_life_insurance: Optional[int] = Field(
@@ -60,15 +60,15 @@ class RealEstateProfitabilityInput(BaseModel):
         description="Annual mortgage life insurance premium"
     )
     has_rental_protection_insurance: Literal["Y", "N"] = Field(
-        ...,
+        default="Y",
         description="Whether rental protection insurance is included"
     )
     rental_protection_insurance: Optional[float] = Field(
         None,
         description="Annual rental protection insurance premium"
     )
-    property_tax_ibi: int = Field(
-        ...,
+    property_tax_ibi: Optional[int] = Field(
+        None,
         description="Annual property tax (IBI)"
     )
     vacancy_allowance: Optional[float] = Field(
@@ -88,7 +88,7 @@ class RealEstateProfitabilityInput(BaseModel):
 
     """Mortgage Financing"""
     loan_to_value_ratio: float = Field(
-        ...,
+        default=0.80,
         ge=0,
         le=1,
         description="Financed percentage expressed as decimal (e.g. 0.80 = 80% LTV)"
@@ -128,11 +128,17 @@ class RealEstateProfitabilityInput(BaseModel):
                 self.monthly_rental_income * 12 * 0.05
             )
 
-        # Calculate maintenance cost if not provided
+        # Calculate default values if not provided
         if self.maintenance_cost is None:
             self.maintenance_cost = 0.10 * self.monthly_rental_income * 12
-
-        # Calculate vacancy allowance by default
+        if self.notary_cost is None:
+            self.notary_cost = 0.02 * self.purchase_price
+        if self.registry_cost is None:
+            self.registry_cost = 0.002 * self.purchase_price
+        if self.agency_commission is None:
+            self.agency_commission = 0.02 * self.purchase_price
+        if self.property_tax_ibi is None:
+            self.property_tax_ibi = 0.001 * self.purchase_price
         if self.vacancy_allowance is None:
             self.vacancy_allowance = 0.05 * 12 * self.monthly_rental_income
 
