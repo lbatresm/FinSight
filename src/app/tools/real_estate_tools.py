@@ -202,10 +202,11 @@ def real_estate_profitability_calculator(
     Calculate comprehensive profitability and financial analysis for Spanish 
     real estate rental property investments.
     
-    This tool performs exhaustive real estate investment analysis considering
-    all acquisition costs, annual operating expenses, mortgage financing,
-    Spanish taxes (IRPF and ITP by autonomous community), and generates
+    This tool performs exhaustive real estate investment analysis and generates
     key profitability metrics.
+
+    Important: Some parameters are optional or have default values. Do not request the user to
+    provide them if they are not obligatory.
     
     Args:
         purchase_price: Property purchase price

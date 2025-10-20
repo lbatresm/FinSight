@@ -8,4 +8,4 @@ src/app/*.md
 
 # Unwanted files
 src/app/*.png
-src/app/agent.py
+src/app/complex_agent.py
